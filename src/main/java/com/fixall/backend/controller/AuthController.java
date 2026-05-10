@@ -4,6 +4,7 @@ import com.fixall.backend.dto.request.*;
 import com.fixall.backend.dto.response.AuthResponse;
 import com.fixall.backend.model.User;
 import com.fixall.backend.service.*;
+import com.fixall.backend.dto.request.UpdateFcmTokenRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -46,5 +47,14 @@ public class AuthController {
     public ResponseEntity<User> me(
             @AuthenticationPrincipal User currentUser) {
         return ResponseEntity.ok(currentUser);
+    }
+
+    // POST /api/auth/fcm-token  — update authenticated user's FCM token
+    @PostMapping("/fcm-token")
+    public ResponseEntity<?> updateFcmToken(
+            @AuthenticationPrincipal User currentUser,
+            @Valid @RequestBody UpdateFcmTokenRequest req) {
+        authService.updateFcmToken(currentUser.getId(), req.getFcmToken());
+        return ResponseEntity.ok().build();
     }
 }

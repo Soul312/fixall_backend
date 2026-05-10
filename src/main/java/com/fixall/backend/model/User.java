@@ -26,23 +26,39 @@ public class User implements UserDetails {
     @Column(unique = true, nullable = false)
     private String email;
 
-    @Column(nullable = false)
+    @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private UserRole role;
 
+    @Column(name = "full_name")
     private String fullName;
     private String phone;
+    @Column(name = "fcm_token")
     private String fcmToken;   // Firebase push notification token
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "verification_status")
     @Builder.Default
     private VerificationStatus verificationStatus = VerificationStatus.PENDING;
 
+    @Column(name = "created_at")
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt = LocalDateTime.now();
+
+    @PrePersist
+    public void prePersist() {
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    public void preUpdate() { this.updatedAt = LocalDateTime.now(); }
 
     // ── Spring Security methods ──────────────────────────────────
     @Override

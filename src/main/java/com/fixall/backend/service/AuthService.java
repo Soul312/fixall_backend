@@ -37,4 +37,11 @@ public class AuthService {
         return userRepository.findByEmail(req.getEmail())
             .orElseThrow(() -> new RuntimeException("User not found"));
     }
+
+    public User updateFcmToken(String userId, String fcmToken) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setFcmToken(fcmToken);
+        return userRepository.save(user);
+    }
 }

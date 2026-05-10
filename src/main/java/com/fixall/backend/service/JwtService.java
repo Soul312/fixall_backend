@@ -1,7 +1,9 @@
 package com.fixall.backend.service;
 
 import com.fixall.backend.model.User;
-import io.jsonwebtoken.*;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -34,16 +36,21 @@ public class JwtService {
     }
 
     public boolean isTokenValid(String token) {
-        try { parseClaims(token); return true; }
-        catch (JwtException e) { return false; }
+        try {
+            parseClaims(token);
+            return true;
+        } catch (JwtException | IllegalArgumentException e) {
+            return false;
+        }
     }
 
     private Claims parseClaims(String token) {
+        // Use parser() variant to remain compatible with the API available at compile-time
         return Jwts.parser()
-            .verifyWith(getSigningKey())
+            .setSigningKey(getSigningKey())
             .build()
-            .parseSignedClaims(token)
-            .getPayload();
+            .parseClaimsJws(token)
+            .getBody();
     }
 
     private SecretKey getSigningKey() {

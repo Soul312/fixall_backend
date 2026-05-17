@@ -30,6 +30,12 @@ public class ProfessionalProfile {
     @Column(name = "category")
     private List<String> categories;
 
+    @Column(name = "id_document_url")
+    private String idDocumentUrl;
+
+    @Column(name = "certification_url")
+    private String certificationUrl;
+
     private Double ratingAverage;
     private Integer totalJobs;
 

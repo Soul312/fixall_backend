@@ -12,6 +12,10 @@ application-local.properties
 application-dev.properties
 **/firebase-service-account.json
 **/google-credentials.json
+
+### Uploads (local file storage) ###
+uploads/
+test_id.*
 ### STS ###
 .apt_generated
 .classpath

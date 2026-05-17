@@ -1,6 +1,7 @@
 package com.fixall.backend.model;
 
 import com.fixall.backend.model.enums.JobStatus;
+import com.fixall.backend.model.enums.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -29,6 +30,7 @@ public class Job {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    @Builder.Default
     private JobStatus status = JobStatus.REQUESTED;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -50,6 +52,14 @@ public class Job {
 
     @Column(name = "actual_price")
     private BigDecimal actualPrice;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_status")
+    @Builder.Default
+    private PaymentStatus paymentStatus = PaymentStatus.PENDING;
+
+    @Column(name = "stripe_payment_intent_id")
+    private String stripePaymentIntentId;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;

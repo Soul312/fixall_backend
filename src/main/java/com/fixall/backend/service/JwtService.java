@@ -45,12 +45,11 @@ public class JwtService {
     }
 
     private Claims parseClaims(String token) {
-        // Use parser() variant to remain compatible with the API available at compile-time
         return Jwts.parser()
-            .setSigningKey(getSigningKey())
+            .verifyWith(getSigningKey())
             .build()
-            .parseClaimsJws(token)
-            .getBody();
+            .parseSignedClaims(token)
+            .getPayload();
     }
 
     private SecretKey getSigningKey() {

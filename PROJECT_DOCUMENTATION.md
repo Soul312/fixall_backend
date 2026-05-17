@@ -1,123 +1,95 @@
 # FixAll Backend — Project Documentation
 
-Last updated: 2026-05-08
+Last updated: 2026-05-17
 
-This document fuses and replaces the previous implementation checklist and status overview. It contains the project requirements, current implementation status, developer notes, and quick setup/run instructions. For historical files, see `IMPLEMENTATION_CHECKLIST.md` and `IMPLEMENTATION_STATUS_OVERVIEW.md` (kept for history).
+> For the full implementation plan (all phases, architecture decisions, SRS coverage), see [`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md).
 
 ---
 
 ## 1. Project Overview
 
-FixAll is a Spring Boot backend service for a mobile app that connects clients with professionals (e.g., plumbers, electricians). Core responsibilities:
-- Authentication and authorization (JWT)
+FixAll is a Spring Boot backend for a mobile + web platform connecting clients with professionals (plumbers, electricians, etc.). Core features:
+- JWT authentication and authorization
+- Job lifecycle: create → match (Haversine radius) → accept → complete → rate
 - Professional profiles and verification
-- Job posting, discovery by professionals (geospatial/radius search)
-- Ratings and reviews
-- File uploads (ID documents, job photos)
+- File uploads (local storage)
 - Push notifications (Firebase Admin SDK)
+- Payments (Stripe basic charges)
 
-This repository uses Spring Boot, Spring Data JPA, Spring Security, PostgreSQL, and integrates libraries for Firebase, Google Cloud Storage, and Stripe.
-
----
-
-## 2. Requirements (from `BACKEND_REQUIREMENTS.md`) — condensed
-
-- Users table with UUID id, email, bcrypt password, full name, phone, role (CLIENT, PROFESSIONAL, ADMIN), verification status, fcm_token
-- Professional profiles table linking to users, bio, categories
-- Jobs table with location (latitude/longitude), status lifecycle (REQUESTED → ACCEPTED → COMPLETED), client/pro relationships
-- Ratings table that links a job to a professional with a 1–5 score
-- API endpoints: `/api/auth` (register/login/fcm), `/api/pro` (profile, verification upload), `/api/requests` (create, my, available, accept, complete, photos), `/api/ratings`
-- Security: JWT-based auth for all endpoints except register/login
-- Geospatial: support radius search (Haversine or PostGIS)
-- Notifications: FCM push on job status changes
-- File storage: cloud or local storage for uploads; store only URLs/paths in DB
-
-See full original text in `BACKEND_REQUIREMENTS.md`.
+Tech stack: Spring Boot 4, PostgreSQL 16 (Docker), Java 24, Gradle.
 
 ---
 
-## 3. Current Implementation Status (high-level)
+## 2. Current Implementation Status
 
-Summary (approx):
-- Security & Auth: implemented (register, login, JWT, password hashing, `/api/auth/me`, `/api/auth/fcm-token`)
-- Professional Profiles: basic implementation (entity, repository, service, controller, `POST /api/pro/profile`)
-- Jobs: JPA `Job` entity and `JobRepository` implemented (endpoints still to add)
-- Ratings: JPA `Rating` entity and `RatingRepository` implemented (endpoints still to add)
-- Database DDL: `DATABASE_SETUP.sql` contains a full schema and helpers (functions, triggers); JPA entities cover `users`, `professional_profiles`, `jobs`, `ratings` (controllers and services for jobs/ratings still to add)
-- Remaining high-priority work: Job endpoints, Ratings endpoints, File upload & verification upload, Notifications integration, geospatial queries
+### ✅ Complete (Phases 1–5)
+- **Auth**: register, login, JWT generation/validation, BCrypt password hashing
+- **Auth endpoints**: `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me`, `POST /api/auth/fcm-token`
+- **Professional profile**: entity + service + `POST /api/pro/profile`
+- **Jobs**: full lifecycle with Haversine radius search
+  - `POST /api/requests` — create job
+  - `GET /api/requests/my` — user's jobs
+  - `GET /api/requests/available?lat=&lng=&radiusKm=` — nearby available jobs
+  - `GET /api/requests/{id}` — single job
+  - `PATCH /api/requests/{id}/accept` — pro accepts
+  - `PATCH /api/requests/{id}/complete` — pro completes
+  - `PATCH /api/requests/{id}/cancel` — cancel
+- **Ratings**: submit + get by job
+  - `POST /api/ratings` — submit rating (validates ownership, completion, duplicates)
+  - `GET /api/ratings/job/{jobId}` — get rating for a job
+- **File uploads & verification**: ID/cert uploads, job photos, `/uploads/**` public serving
+- **Payments**: Stripe PaymentIntents create + confirm with job payment status tracking
+- **Notifications**: Firebase Admin SDK with graceful stub mode if service account is missing
+- **Admin panel**: stats, user management, verification approvals, job management (admin-only)
+- **Error handling**: `@ControllerAdvice` with proper HTTP status codes
+- **CORS**: configured for development
+- **Docker Compose**: PostgreSQL 16 on port 5433
 
-Detailed status and checklist were maintained in `IMPLEMENTATION_CHECKLIST.md` and `IMPLEMENTATION_STATUS_OVERVIEW.md` before this merge — those files are kept but marked as historical; this document is the single source of truth going forward.
-
----
-
-## 4. Implementation Checklist (short)
-
-Completed (key):
-- Auth: register/login, JWT generation & validation, Security filter, password hashing
-- Auth endpoints: `/api/auth/register`, `/api/auth/login`, `/api/auth/me`, `/api/auth/fcm-token`
-- Professional profile: entity + persistence + `POST /api/pro/profile`
-- CORS configuration and application properties present
-- Job: entity (Job.java) + repository (JobRepository.java) with finder methods and radius query
-- Rating: entity (Rating.java) + repository (RatingRepository.java) with job finder
-
-To do (priority order):
-1. Job endpoints: `POST /api/requests`, `GET /api/requests/my`, `GET /api/requests/available`, `PATCH /{id}/accept`, `PATCH /{id}/complete`, `POST /{id}/photos`
-2. Rating endpoints: `POST /api/ratings`
-3. Job and Rating DTOs (CreateJobRequest, JobResponse, CreateRatingRequest, RatingResponse)
-4. Job and Rating services (business logic)
-5. File upload endpoints and storage (ID docs, job photos) and verification flow
-6. Firebase notifications (NotificationService) and integration for job status changes
-7. Geospatial queries: integration with Haversine or PostGIS for radius searches
-8. Exception handling: global `@ControllerAdvice` and custom exceptions
-9. Tests: unit and integration tests
+### ⚠️ Remaining (Phase 6 and mobile wiring)
+- **Web frontend**: missing client job detail, payment, rating, pro history, and earnings pages
+- **Android**: wire PaymentScreen to backend clientSecret; complete FCM token flow and foreground/background handling
 
 ---
 
-## 5. Database setup note
+## 3. How to Build & Run
 
-- The file `DATABASE_SETUP.sql` contains a complete PostgreSQL schema, triggers and functions. It currently offers two approaches for spatial data:
-  - PostGIS-enabled geometry column and functions (optional)
-  - A pure SQL Haversine function (no extension required)
+### Prerequisites
+- Java 24
+- Docker Desktop (for PostgreSQL)
+- Gradle via `gradlew` (included)
 
-- UUID generation: UUIDs are generated by the Java application using `@GeneratedValue(strategy = GenerationType.UUID)` in JPA entities. The database stores them as UUID type. No PostgreSQL extensions required.
-
-Important: The SQL schema and JPA entity mappings must stay consistent. In particular, `professional_profiles.categories` in SQL is a `TEXT[]` column while the current JPA mapping uses an `@ElementCollection` join table. Choose one mapping style and I can align code or SQL accordingly.
-
----
-
-## 6. How to build & run
-
-Prereqs: Java 24, PostgreSQL 9.1+, Gradle via `gradlew` (included)
-
-1. Create DB and set environment variables (example `.env` format shown in `application.properties`)
-2. Optionally run `DATABASE_SETUP.sql` to initialize schema:
+### Steps
 ```powershell
-psql -U postgres -d fixall_db -f DATABASE_SETUP.sql
-```
-3. Build and run:
-```powershell
-.\gradlew.bat build
+# 1. Start PostgreSQL
+docker compose up -d
+
+# 2. Run backend
 .\gradlew.bat bootRun
+
+# Server starts at http://localhost:8080
+
+# 3. Run web frontend dev server (port 5173)
+cd "front end\FixAllFrontEnd\ui"
+npm run dev
 ```
 
----
-
-## 7. Key files & locations
-
-- `BACKEND_REQUIREMENTS.md` — original requirements
-- `DATABASE_SETUP.sql` — DB DDL and helpers
-- `PROJECT_DOCUMENTATION.md` — this fused document
-- `IMPLEMENTATION_CHECKLIST.md` — historical checklist (short redirect)
-- `IMPLEMENTATION_STATUS_OVERVIEW.md` — historical status (short redirect)
+### Environment
+All env vars are in `.env` (auto-loaded by Spring Boot):
+- `DB_URL`, `DB_USER`, `DB_PASS` — PostgreSQL connection
+- `JWT_SECRET`, `JWT_EXPIRY_MS` — token config
+- `STRIPE_SECRET` — Stripe API key
+- `FIREBASE_PROJECT_ID` — FCM
+- `GOOGLE_MAPS_KEY` — Maps API
 
 ---
 
-## 8. Next actions I can take (tell me which)
+## 4. Key Files
 
-1. Align `professional_profiles.categories` between SQL and JPA (convert to TEXT[] or to ElementCollection). Recommendation: use JPA `@ElementCollection` if portability matters; use TEXT[] if you need array operations in SQL.
-2. Implement Job and Rating JPA entities + their controllers/DTOs and tests.
-3. Add file upload endpoints with local disk storage or GCS integration.
-4. Add NotificationService to send FCM pushes on job status changes.
-
-Reply with which next action you'd like me to implement, or say "align categories to TEXT[]" or "align categories to ElementCollection" and I'll proceed.
-
+| File | Purpose |
+|------|---------|
+| `docker-compose.yml` | PostgreSQL 16 container (port 5433) |
+| `.env` | Environment variables |
+| `IMPLEMENTATION_PLAN.md` | Full plan, architecture decisions, SRS coverage |
+| `PROJECT_DOCUMENTATION.md` | This file |
+| `build.gradle` | Dependencies and build config |
+| `src/main/resources/application.properties` | Spring Boot config |

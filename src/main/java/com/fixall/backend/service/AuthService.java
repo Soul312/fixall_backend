@@ -1,6 +1,8 @@
 package com.fixall.backend.service;
 
 import com.fixall.backend.dto.request.*;
+import com.fixall.backend.exception.BadRequestException;
+import com.fixall.backend.exception.ResourceNotFoundException;
 import com.fixall.backend.model.User;
 import com.fixall.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +20,7 @@ public class AuthService {
 
     public User register(RegisterRequest req) {
         if (userRepository.existsByEmail(req.getEmail())) {
-            throw new RuntimeException("Email already in use");
+            throw new BadRequestException("Email already in use");
         }
         User user = User.builder()
             .email(req.getEmail())
@@ -35,13 +37,14 @@ public class AuthService {
             new UsernamePasswordAuthenticationToken(req.getEmail(), req.getPassword())
         );
         return userRepository.findByEmail(req.getEmail())
-            .orElseThrow(() -> new RuntimeException("User not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("User not found"));
     }
 
     public User updateFcmToken(String userId, String fcmToken) {
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new RuntimeException("User not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         user.setFcmToken(fcmToken);
         return userRepository.save(user);
     }
 }
+

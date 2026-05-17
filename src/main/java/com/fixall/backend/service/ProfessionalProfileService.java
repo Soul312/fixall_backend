@@ -1,6 +1,7 @@
 package com.fixall.backend.service;
 
 import com.fixall.backend.dto.request.UpdateProfessionalProfileRequest;
+import com.fixall.backend.exception.ResourceNotFoundException;
 import com.fixall.backend.model.ProfessionalProfile;
 import com.fixall.backend.model.User;
 import com.fixall.backend.repository.ProfessionalProfileRepository;
@@ -19,7 +20,7 @@ public class ProfessionalProfileService {
 
     public ProfessionalProfile saveOrUpdate(String userId, UpdateProfessionalProfileRequest req) {
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new RuntimeException("User not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         Optional<ProfessionalProfile> existing = profileRepository.findByUser_Id(userId);
         ProfessionalProfile profile = existing.orElseGet(() -> ProfessionalProfile.builder()

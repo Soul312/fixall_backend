@@ -152,6 +152,9 @@ Server startup ✅ → graceful warning when no firebase-service-account.json
 2. Place at `src/main/resources/firebase-service-account.json`
 3. Restart the server — notifications will be sent via FCM
 
+### Current workspace status
+- `firebase-service-account.json` has been placed under `src/main/resources/` (file is ignored by git)
+
 ### Android (remaining)
 - Wire `FixAllMessagingService.kt` for foreground/background handling
 - Send FCM token to backend after login

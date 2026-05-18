@@ -199,24 +199,51 @@ Non-admin access                   ✅ → correctly denied (403)
 
 ---
 
-## 8. Phase 6 — Web Frontend Completion
+## 8. Phase 6 — Web Frontend Completion ✅ COMPLETE
 
-### [MODIFY] Existing pages
-- `ClientDashboard.jsx` — already wired to `/api/requests/my` ✅
-- `ProfessionalDashboard.jsx` — already wired to `/api/requests/available` ✅
-- `NewRequest.jsx` — already wired to `POST /api/requests` ✅
+> [!IMPORTANT]
+> All missing frontend pages have been implemented and wired to the backend API.
 
-### [NEW] Missing pages
-- `/client/request/{id}` — job detail view with status timeline
-- `/client/request/{id}/rate` — rating submission form
-- `/client/request/{id}/pay` — Stripe payment form
-- `/professional/jobs` — pro's accepted/completed jobs history
-- `/professional/earnings` — earnings summary (SRS §4.3)
+### What was done
 
-### [MODIFY] Navigation
-- `SideNav.jsx` — add links for new pages
-- `App.jsx` — add routes for new pages
-- Add admin nav section if user role is ADMIN
+**New pages created:**
+- `JobDetail.jsx` (`/client/request/:id`) — full job detail view with status timeline, pricing, people, rating display, and action buttons (pay, rate, cancel)
+- `RateJob.jsx` (`/client/request/:id/rate`) — interactive star rating submission with comment, job summary sidebar, and form validation
+- `PayJob.jsx` (`/client/request/:id/pay`) — Stripe payment flow (create intent → confirm), success animation, order summary sidebar
+- `ProJobs.jsx` (`/professional/jobs`) — professional's job history with status filters, stats cards, and mark-complete action
+- `ProEarnings.jsx` (`/professional/earnings`) — earnings dashboard with revenue stats, monthly bar chart, and recent paid jobs list
+
+**Modified files:**
+- `App.jsx` — added routes: `/client/request/:id`, `/client/request/:id/rate`, `/client/request/:id/pay`, `/professional/jobs`, `/professional/earnings`
+- `SideNav.jsx` — restructured with sections: Available Jobs, My Jobs, Earnings for pros; My Requests, New Request for clients; admin section unchanged
+- `TopNav.jsx` — added admin-specific nav links, pro nav with Find Jobs / My Jobs / Earnings / Profile
+- `ClientDashboard.jsx` — job cards now link to detail page, completed jobs show Pay/Rate action buttons
+- `ProfessionalDashboard.jsx` — "View details" button now links to actual job detail page
+
+**Cleanup:**
+- Deleted 7 duplicate page files from `pages/` root (old unstyled versions): `ClientDashboard.jsx`, `Home.jsx`, `Login.jsx`, `NewRequest.jsx`, `ProfessionalDashboard.jsx`, `Profile.jsx`, `Register.jsx`
+
+### Files created/modified
+| Action | File |
+|--------|------|
+| NEW | `pages/client/JobDetail.jsx` |
+| NEW | `pages/client/RateJob.jsx` |
+| NEW | `pages/client/PayJob.jsx` |
+| NEW | `pages/pro/ProJobs.jsx` |
+| NEW | `pages/pro/ProEarnings.jsx` |
+| MODIFIED | `App.jsx` — 5 new routes added |
+| MODIFIED | `components/SideNav.jsx` — restructured with new nav links |
+| MODIFIED | `components/TopNav.jsx` — admin + pro nav links |
+| MODIFIED | `pages/client/ClientDashboard.jsx` — clickable cards + action buttons |
+| MODIFIED | `pages/pro/ProfessionalDashboard.jsx` — view details link |
+| DELETED | 7 duplicate root-level page files |
+
+### Build verification
+```
+vite v5.4.21 building for production...
+✓ 56 modules transformed
+✓ built in 1.18s — no errors
+```
 
 ---
 
@@ -227,18 +254,36 @@ Non-admin access                   ✅ → correctly denied (403)
 | 3.1 Guided Diagnosis | ⚠️ Category + text + photo upload done, no sub-categories | Phase 2 ✅ |
 | 3.2 Matching Algorithm | ✅ Haversine radius search | Phase 1 ✅ |
 | 3.3 Transparent Pricing | ⚠️ estimatedPrice + actualPrice, no adjustment flow yet | Phase 3 ✅ |
-| 3.4 In-App Payments | ✅ Stripe PaymentIntents (create + confirm) | Phase 3 ✅ |
+| 3.4 In-App Payments | ✅ Stripe PaymentIntents (create + confirm) + Web payment page | Phase 3 ✅ + Phase 6 ✅ |
 | 3.5 Professional Verification | ✅ ID upload, certification upload, status check | Phase 2 ✅ |
-| 3.6 Ratings & Reviews | ✅ Single-score rating system | Phase 1 ✅ |
-| 3.7 Technician Tracking | ⚠️ Map screen exists (hardcoded coords) | Phase 6 |
-| 3.8 User Account Management | ✅ Role-based auth, profiles | Phase 1 ✅ |
+| 3.6 Ratings & Reviews | ✅ Single-score rating system + Web rating page | Phase 1 ✅ + Phase 6 ✅ |
+| 3.7 Technician Tracking | ⚠️ Map screen exists (hardcoded coords) | Future |
+| 3.8 User Account Management | ✅ Role-based auth, profiles, dashboards for all roles | Phase 1 ✅ + Phase 6 ✅ |
 | 5.3 Push Notifications | ✅ FCM integration with stub mode fallback | Phase 4 ✅ |
 | 5.4 In-App Chat | ❌ Not started | Future |
-| Admin/Disputes | ❌ Not started | Phase 5 |
+| Admin/Disputes | ✅ Admin panel with user/job management | Phase 5 ✅ |
 
 ---
 
-## 10. How to Run
+## 10. Remaining Work (Future Phases)
+
+### Phase 7 — Polish & Production Readiness
+- [ ] Sub-category breakdown for guided diagnosis (SRS §3.1.2)
+- [ ] Pricing adjustment flow (additional fees approval — SRS §3.3.2–3.3.4)
+- [ ] Multi-criteria ratings (Resolution, Communication, Satisfaction)
+- [ ] GPS tracking with consent flow (SRS §3.7)
+- [ ] In-app chat (SRS §5.4)
+- [ ] Audit logs for admin panel
+- [ ] Payment refunds via admin panel
+
+### Android Wiring
+- [ ] Wire `PaymentScreen.kt` to use real `clientSecret` from backend
+- [ ] Wire `FixAllMessagingService.kt` for foreground/background FCM handling
+- [ ] Send FCM token to backend after login
+
+---
+
+## 11. How to Run
 
 ```powershell
 # Start PostgreSQL (Docker)

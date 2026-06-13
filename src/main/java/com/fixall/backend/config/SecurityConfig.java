@@ -2,10 +2,13 @@ package com.fixall.backend.config;
 
 import com.fixall.backend.repository.UserRepository;
 import com.fixall.backend.service.JwtService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.*;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.*;
 import org.springframework.security.config.annotation.authentication.configuration.*;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -17,7 +20,11 @@ import org.springframework.security.web.*;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 @Configuration
 @EnableWebSecurity
@@ -40,8 +47,36 @@ public class SecurityConfig {
                 // Everything else requires a valid JWT
                 .anyRequest().authenticated()
             )
+            // Return structured JSON for auth errors instead of blank pages
+            .exceptionHandling(ex -> ex
+                .authenticationEntryPoint((request, response, authException) -> {
+                    writeJsonError(response, HttpStatus.UNAUTHORIZED,
+                        "Authentication required — please log in. Your session may have expired.");
+                })
+                .accessDeniedHandler((request, response, accessDeniedException) -> {
+                    writeJsonError(response, HttpStatus.FORBIDDEN,
+                        "Access denied — you do not have permission to perform this action.");
+                })
+            )
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
+    }
+
+    /**
+     * Writes a structured JSON error response matching the GlobalExceptionHandler format.
+     */
+    private static void writeJsonError(HttpServletResponse response, HttpStatus status, String message) throws IOException {
+        response.setStatus(status.value());
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.setCharacterEncoding("UTF-8");
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("timestamp", LocalDateTime.now().toString());
+        body.put("status", status.value());
+        body.put("error", status.getReasonPhrase());
+        body.put("message", message);
+
+        new ObjectMapper().writeValue(response.getOutputStream(), body);
     }
 
     @Bean
@@ -70,16 +105,15 @@ public class SecurityConfig {
         private final UserRepository userRepository;
 
         @Override
+        protected boolean shouldNotFilter(HttpServletRequest request) {
+            String path = request.getRequestURI();
+            return path.startsWith("/api/auth/") || path.startsWith("/uploads/");
+        }
+
+        @Override
         protected void doFilterInternal(HttpServletRequest request,
                 HttpServletResponse response, FilterChain chain)
                 throws IOException, jakarta.servlet.ServletException {
-
-            // Skip filter for public endpoints
-            String path = request.getRequestURI();
-            if (path.startsWith("/api/auth/")) {
-                chain.doFilter(request, response);
-                return;
-            }
 
             String header = request.getHeader("Authorization");
             if (header == null || !header.startsWith("Bearer ")) {
@@ -102,3 +136,4 @@ public class SecurityConfig {
         }
     }
 }
+

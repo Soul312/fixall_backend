@@ -2,6 +2,7 @@ package com.fixall.backend.model;
 
 import com.fixall.backend.model.enums.UserRole;
 import com.fixall.backend.model.enums.VerificationStatus;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
@@ -26,6 +27,7 @@ public class User implements UserDetails {
     @Column(unique = true, nullable = false)
     private String email;
 
+    @JsonIgnore
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
@@ -36,6 +38,7 @@ public class User implements UserDetails {
     @Column(name = "full_name")
     private String fullName;
     private String phone;
+    @JsonIgnore
     @Column(name = "fcm_token")
     private String fcmToken;   // Firebase push notification token
 
@@ -66,7 +69,7 @@ public class User implements UserDetails {
         return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
     }
 
-    @Override public String getPassword()  { return passwordHash; }
+    @Override @JsonIgnore public String getPassword()  { return passwordHash; }
     @Override public String getUsername()   { return email; }
     @Override public boolean isAccountNonExpired()    { return true; }
     @Override public boolean isAccountNonLocked()     { return true; }

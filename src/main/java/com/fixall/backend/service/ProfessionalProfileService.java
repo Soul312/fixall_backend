@@ -27,12 +27,18 @@ public class ProfessionalProfileService {
             .user(user)
             .build());
 
+        profile.setBusinessName(req.getBusinessName());
         profile.setBio(req.getBio());
         profile.setCategories(req.getCategories());
         if (profile.getRatingAverage() == null) profile.setRatingAverage(0.0);
         if (profile.getTotalJobs() == null) profile.setTotalJobs(0);
 
         return profileRepository.save(profile);
+    }
+
+    /** Returns the professional profile for a user, or null if none exists yet. */
+    public ProfessionalProfile getByUserId(String userId) {
+        return profileRepository.findByUser_Id(userId).orElse(null);
     }
 }
 

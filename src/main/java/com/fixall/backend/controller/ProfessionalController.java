@@ -17,6 +17,12 @@ public class ProfessionalController {
 
     private final ProfessionalProfileService profileService;
 
+    @GetMapping("/profile")
+    public ResponseEntity<ProfessionalProfile> getProfile(
+            @AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(profileService.getByUserId(user.getId()));
+    }
+
     @PostMapping("/profile")
     public ResponseEntity<ProfessionalProfile> saveProfile(
             @AuthenticationPrincipal User user,

@@ -49,6 +49,15 @@ public class AuthController {
         return ResponseEntity.ok(currentUser);
     }
 
+    // PUT /api/auth/me   — update authenticated user's basic profile info
+    @PutMapping("/me")
+    public ResponseEntity<User> updateMe(
+            @AuthenticationPrincipal User currentUser,
+            @Valid @RequestBody UpdateUserProfileRequest req) {
+        User updated = authService.updateProfile(currentUser.getId(), req);
+        return ResponseEntity.ok(updated);
+    }
+
     // POST /api/auth/fcm-token  — update authenticated user's FCM token
     @PostMapping("/fcm-token")
     public ResponseEntity<?> updateFcmToken(

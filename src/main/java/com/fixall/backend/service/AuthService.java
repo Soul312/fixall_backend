@@ -40,6 +40,14 @@ public class AuthService {
             .orElseThrow(() -> new ResourceNotFoundException("User not found"));
     }
 
+    public User updateProfile(String userId, UpdateUserProfileRequest req) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        user.setFullName(req.getFullName());
+        user.setPhone(req.getPhone());
+        return userRepository.save(user);
+    }
+
     public User updateFcmToken(String userId, String fcmToken) {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new ResourceNotFoundException("User not found"));

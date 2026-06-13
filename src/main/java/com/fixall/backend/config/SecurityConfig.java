@@ -2,7 +2,6 @@ package com.fixall.backend.config;
 
 import com.fixall.backend.repository.UserRepository;
 import com.fixall.backend.service.JwtService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.*;
 import lombok.RequiredArgsConstructor;
@@ -23,8 +22,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 @Configuration
 @EnableWebSecurity
@@ -42,9 +39,9 @@ public class SecurityConfig {
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 // Public routes — no token needed
-                .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
                 .requestMatchers("/uploads/**").permitAll()
-                // Everything else requires a valid JWT
+                // Everything else (including /api/auth/me, /api/auth/fcm-token) requires a valid JWT
                 .anyRequest().authenticated()
             )
             // Return structured JSON for auth errors instead of blank pages
@@ -70,13 +67,19 @@ public class SecurityConfig {
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding("UTF-8");
 
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("timestamp", LocalDateTime.now().toString());
-        body.put("status", status.value());
-        body.put("error", status.getReasonPhrase());
-        body.put("message", message);
+        String json = "{"
+            + "\"timestamp\":\"" + LocalDateTime.now() + "\","
+            + "\"status\":" + status.value() + ","
+            + "\"error\":\"" + escapeJson(status.getReasonPhrase()) + "\","
+            + "\"message\":\"" + escapeJson(message) + "\""
+            + "}";
 
-        new ObjectMapper().writeValue(response.getOutputStream(), body);
+        response.getWriter().write(json);
+    }
+
+    /** Minimal JSON string escaping for the few static error messages above. */
+    private static String escapeJson(String value) {
+        return value.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 
     @Bean
@@ -107,7 +110,9 @@ public class SecurityConfig {
         @Override
         protected boolean shouldNotFilter(HttpServletRequest request) {
             String path = request.getRequestURI();
-            return path.startsWith("/api/auth/") || path.startsWith("/uploads/");
+            return path.equals("/api/auth/login")
+                || path.equals("/api/auth/register")
+                || path.startsWith("/uploads/");
         }
 
         @Override

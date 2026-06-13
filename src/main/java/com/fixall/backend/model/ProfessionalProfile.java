@@ -22,6 +22,9 @@ public class ProfessionalProfile {
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
 
+    @Column(name = "business_name")
+    private String businessName;
+
     @Column(columnDefinition = "TEXT")
     private String bio;
 

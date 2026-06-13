@@ -11,6 +11,32 @@ services:
       POSTGRES_PASSWORD: password
     volumes:
       - fixall_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d fixall"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: .
+    container_name: fixall-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      # Reach Postgres over the internal compose network (service name + 5432).
+      DB_URL: jdbc:postgresql://postgres:5432/fixall
+      DB_USER: postgres
+      DB_PASS: password
+      JWT_SECRET: ${JWT_SECRET:-change-me-please-use-a-long-random-secret}
+      JWT_EXPIRY_MS: ${JWT_EXPIRY_MS:-86400000}
+      STRIPE_SECRET: ${STRIPE_SECRET:-}
+      STRIPE_PUBLISHABLE: ${STRIPE_PUBLISHABLE:-}
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID:-}
+      GOOGLE_MAPS_KEY: ${GOOGLE_MAPS_KEY:-}
 
 volumes:
   fixall_pgdata:

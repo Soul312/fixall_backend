@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -20,6 +21,7 @@ public class AuthController {
 
     private final AuthService authService;
     private final JwtService jwtService;
+    private final FileStorageService fileStorageService;
 
     // POST /api/auth/register
     @PostMapping("/register")
@@ -55,6 +57,20 @@ public class AuthController {
             @AuthenticationPrincipal User currentUser,
             @Valid @RequestBody UpdateUserProfileRequest req) {
         User updated = authService.updateProfile(currentUser.getId(), req);
+        return ResponseEntity.ok(updated);
+    }
+
+    // POST /api/auth/me/avatar  — upload/replace the user's profile picture (max 5MB image)
+    @PostMapping("/me/avatar")
+    public ResponseEntity<User> uploadAvatar(
+            @AuthenticationPrincipal User currentUser,
+            @RequestParam("file") MultipartFile file) {
+        String oldUrl = currentUser.getAvatarUrl();
+        String url = fileStorageService.storeImage(file, "avatars", 5 * 1024 * 1024);
+        User updated = authService.updateAvatar(currentUser.getId(), url);
+        if (oldUrl != null) {
+            fileStorageService.deleteFile(oldUrl);
+        }
         return ResponseEntity.ok(updated);
     }
 

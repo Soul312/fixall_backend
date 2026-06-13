@@ -48,6 +48,13 @@ public class AuthService {
         return userRepository.save(user);
     }
 
+    public User updateAvatar(String userId, String avatarUrl) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        user.setAvatarUrl(avatarUrl);
+        return userRepository.save(user);
+    }
+
     public User updateFcmToken(String userId, String fcmToken) {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new ResourceNotFoundException("User not found"));

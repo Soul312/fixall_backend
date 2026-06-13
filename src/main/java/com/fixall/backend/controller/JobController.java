@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/requests")
@@ -77,19 +76,14 @@ public class JobController {
         return ResponseEntity.ok(jobService.cancelJob(id, user.getId()));
     }
 
-    // POST /api/requests/{id}/photos — Upload a diagnostic photo for a job
+    // POST /api/requests/{id}/photos — Upload a context image for a job (max 10MB)
     @PostMapping("/{id}/photos")
-    public ResponseEntity<Map<String, String>> uploadJobPhoto(
+    public ResponseEntity<JobResponse> uploadJobPhoto(
             @PathVariable String id,
             @AuthenticationPrincipal User user,
             @RequestParam("photo") MultipartFile photo) {
-        // Verify job exists and user is involved
-        jobService.getJobById(id); // throws 404 if not found
-        String fileUrl = fileStorageService.storeFile(photo, "job-photos/" + id);
-        return ResponseEntity.ok(Map.of(
-            "message", "Photo uploaded successfully",
-            "fileUrl", fileUrl
-        ));
+        String fileUrl = fileStorageService.storeImage(photo, "job-photos/" + id, 10 * 1024 * 1024);
+        return ResponseEntity.ok(jobService.addPhoto(id, user.getId(), fileUrl));
     }
 }
 

@@ -5,6 +5,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -14,6 +15,8 @@ public class JobResponse {
     private String description;
     private String category;
     private String status;
+
+    private List<String> photos;
 
     private String clientId;
     private String clientName;

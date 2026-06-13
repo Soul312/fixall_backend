@@ -7,6 +7,7 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "jobs")
@@ -27,6 +28,12 @@ public class Job {
     private String description;
 
     private String category;
+
+    // Context images attached by the client when creating the request.
+    @ElementCollection
+    @CollectionTable(name = "job_photos", joinColumns = @JoinColumn(name = "job_id"))
+    @Column(name = "photo_url")
+    private List<String> photos;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -73,6 +74,23 @@ public class JobService {
         Job job = jobRepository.findById(jobId)
             .orElseThrow(() -> new ResourceNotFoundException("Job not found: " + jobId));
         return toResponse(job);
+    }
+
+    // ── Photos ────────────────────────────────────────────────────
+    @Transactional
+    public JobResponse addPhoto(String jobId, String userId, String photoUrl) {
+        Job job = jobRepository.findById(jobId)
+            .orElseThrow(() -> new ResourceNotFoundException("Job not found: " + jobId));
+
+        if (!job.getClient().getId().equals(userId)) {
+            throw new ForbiddenException("Only the client who created this request can add photos");
+        }
+
+        if (job.getPhotos() == null) {
+            job.setPhotos(new ArrayList<>());
+        }
+        job.getPhotos().add(photoUrl);
+        return toResponse(jobRepository.save(job));
     }
 
     // ── Accept ────────────────────────────────────────────────────
@@ -169,6 +187,7 @@ public class JobService {
             .title(job.getTitle())
             .description(job.getDescription())
             .category(job.getCategory())
+            .photos(job.getPhotos())
             .status(job.getStatus().name())
             .clientId(job.getClient().getId())
             .clientName(job.getClient().getFullName())

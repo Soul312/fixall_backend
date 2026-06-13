@@ -55,6 +55,34 @@ public class FileStorageService {
             throw new BadRequestException("File size exceeds 20MB limit");
         }
 
+        return write(file, subDir);
+    }
+
+    /**
+     * Store an image file (jpeg/png/webp/gif) with a custom size limit.
+     *
+     * @param maxBytes maximum allowed size in bytes
+     * @return the relative URL path, e.g. "/uploads/job-photos/abc.jpg"
+     */
+    public String storeImage(MultipartFile file, String subDir, long maxBytes) {
+        if (file == null || file.isEmpty()) {
+            throw new BadRequestException("File is empty");
+        }
+
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            throw new BadRequestException("Only image files are allowed (got: " + contentType + ")");
+        }
+
+        if (file.getSize() > maxBytes) {
+            throw new BadRequestException("Image exceeds the " + (maxBytes / (1024 * 1024)) + "MB limit");
+        }
+
+        return write(file, subDir);
+    }
+
+    /** Writes a validated file to disk and returns its relative URL path. */
+    private String write(MultipartFile file, String subDir) {
         try {
             Path dirPath = Paths.get(uploadDir, subDir);
             Files.createDirectories(dirPath);

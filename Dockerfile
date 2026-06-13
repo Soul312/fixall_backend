@@ -27,7 +27,11 @@ WORKDIR /app
 RUN groupadd --system spring && useradd --system --gid spring spring
 
 COPY --from=build /app/build/libs/*.jar app.jar
-RUN chown spring:spring app.jar
+# Pre-create a writable uploads dir owned by the unprivileged user. Without this
+# the app (running as `spring`) cannot create /app/uploads under root-owned /app.
+RUN chown spring:spring app.jar \
+    && mkdir -p /app/uploads \
+    && chown -R spring:spring /app/uploads
 USER spring
 
 EXPOSE 8080

@@ -38,6 +38,8 @@ public class User implements UserDetails {
     @Column(name = "full_name")
     private String fullName;
     private String phone;
+    @Column(name = "avatar_url")
+    private String avatarUrl;
     @JsonIgnore
     @Column(name = "fcm_token")
     private String fcmToken;   // Firebase push notification token

@@ -7,6 +7,7 @@ import com.fixall.backend.model.User;
 import com.fixall.backend.service.PaymentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -20,9 +21,21 @@ public class PaymentController {
 
     private final PaymentService paymentService;
 
+    @Value("${stripe.publishable}")
+    private String stripePublishable;
+
+    /**
+     * GET /api/payments/config
+     * Returns the Stripe publishable key so the frontend can initialize Stripe.js.
+     */
+    @GetMapping("/config")
+    public ResponseEntity<Map<String, String>> getConfig() {
+        return ResponseEntity.ok(Map.of("publishableKey", stripePublishable));
+    }
+
     /**
      * POST /api/payments/create-intent
-     * Client creates a Stripe PaymentIntent for a completed job.
+     * Client creates a Stripe PaymentIntent for an accepted/completed job.
      * Returns the clientSecret needed by the frontend Stripe SDK.
      */
     @PostMapping("/create-intent")

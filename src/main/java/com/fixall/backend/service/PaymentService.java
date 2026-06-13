@@ -53,9 +53,9 @@ public class PaymentService {
             throw new ForbiddenException("Only the client of this job can initiate payment");
         }
 
-        // Job must be completed before payment
-        if (job.getStatus() != JobStatus.COMPLETED) {
-            throw new BadRequestException("Job must be COMPLETED before payment can be made");
+        // Job must be accepted or completed before payment
+        if (job.getStatus() != JobStatus.ACCEPTED && job.getStatus() != JobStatus.COMPLETED) {
+            throw new BadRequestException("Job must be ACCEPTED or COMPLETED before payment can be made");
         }
 
         // Prevent double payment
